@@ -1,0 +1,18 @@
+.container {
+  position: absolute;
+  top: 25%;
+  left: calc(50vw - 121px);
+  text-align: center;
+}
+
+.container h2 {
+  font-size: 5rem;
+}
+
+.container a {
+  font-size: 1.4rem;
+}
+
+.select__text {
+  color: white;
+}

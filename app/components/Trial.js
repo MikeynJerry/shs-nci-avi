@@ -1,0 +1,242 @@
+import React, { Component } from 'react';
+import { withRouter, Link } from 'react-router-dom';
+import { Player } from 'video-react';
+import Image from 'react-bootstrap/Image';
+import Fab from '@material-ui/core/Fab';
+import routes from '../constants/routes';
+import styles from './Trial.css';
+import { videos } from '../videos';
+import { images } from '../images';
+import { keys } from '../keys';
+
+const { dialog } = require('electron').remote;
+
+class Trial extends Component {
+  constructor(props) {
+    super(props);
+    const {
+      location: {
+        state: {
+          pid,
+          object: { value: object },
+          video: { value: video },
+          vocoded: { value: vocoded }
+        }
+      }
+    } = this.props;
+
+    this.state = {
+      pid,
+      object,
+      video,
+      vocoded,
+      trialNumber: 0,
+      trial: this.generateTrial(object, vocoded),
+      guess: 0,
+      tempTrialData: {},
+      selected: [],
+      trialData: [],
+      lock: false,
+      errorMsg: ''
+    };
+  }
+
+  generateTrial = (object, vocoded) => {
+    const trial = [];
+    const trialKeys = this.shuffle(Object.keys(keys[object]));
+    const imageSet = images[object];
+
+    trialKeys.forEach(key => {
+      const correctImage = { key, image: imageSet[key] };
+      const incorrectImages = this.getIncorrectImages(key, imageSet);
+      const trialImages = this.shuffle([correctImage, ...incorrectImages]);
+      const videoSet = videos[object][vocoded];
+      const video = videoSet[`${key}_${vocoded}`];
+
+      trial.push({
+        correct: key,
+        images: trialImages,
+        video
+      });
+    });
+
+    return trial;
+  };
+
+  saveTrial = referrer => {
+    console.log(referrer);
+    dialog.showSaveDialog(
+      { filters: [{ name: 'CSV', extensions: ['csv'] }] },
+      filename => {
+        const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+        const csvWriter = createCsvWriter({
+          path: filename,
+          header: [
+            { id: 'pid', title: 'Participant ID' },
+            { id: 'date', title: 'Date and Time' },
+            { id: 'presented', title: 'Objects Presented' },
+            { id: 'correct', title: 'Target Object' },
+            { id: 'selected', title: 'Objects Selected' }
+          ]
+        });
+        const { trialData, pid } = this.state;
+        const records = trialData.map(trial => ({
+          pid,
+          ...trial
+        }));
+
+        csvWriter
+          .writeRecords(records)
+          .then(() => this.setState({ errorMsg: 'File saved successfully' }))
+          .catch(err =>
+            this.setState({
+              errorMsg: `Something went wrong, try again!:  ${err}`
+            })
+          );
+      }
+    );
+    return this.saveButton();
+  };
+
+  saveButton = () => (
+    <div>
+      <div className={styles.backButton} data-tid="backButton">
+        <Link to={routes.HOME}>
+          <i className="fa fa-arrow-left fa-3x" />
+        </Link>
+      </div>
+      <div>
+        <span>{this.state.errorMsg}</span>
+        <Fab
+          variant="extended"
+          aria-label="Save"
+          color="primary"
+          onClick={() => this.saveTrial()}
+        >
+          Save the file again
+        </Fab>
+      </div>
+    </div>
+  );
+
+  getIncorrectImages = (key, imageSet) => {
+    const images = Object.keys(imageSet).filter(imageKey => imageKey !== key);
+    return this.shuffle(images)
+      .slice(0, 3)
+      .map(key => ({
+        key,
+        image: imageSet[key]
+      }));
+  };
+
+  shuffle = a => {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  selectImage = (key, currentTrial, imgClass) => {
+    const { guess, trialData, selected, trialNumber, lock } = this.state;
+    const { correct } = currentTrial;
+
+    if (lock) return;
+
+    selected.push(key);
+
+    // move to next trial and gather stats
+    if (key === correct) {
+      trialData.push({
+        date: new Date(),
+        presented: currentTrial.images.map(image => image.key),
+        correct,
+        selected
+      });
+      this.setState({
+        guess: 0,
+        trialNumber: trialNumber + 1,
+        trialData,
+        selected: []
+      });
+    }
+
+    // inc guess, show try again vid, highlight incorrect image / remove it
+    if (guess === 0 && key !== correct) {
+      // TODD: highlight incorrect image, remove it
+      console.log('wrong, guess = 0');
+      this.setState({ guess: 1, selected });
+    }
+
+    // inc guess, show here it is vid, highlight right answer
+    if (guess === 1 && key !== correct) {
+      // TODO: highlight correct image
+      console.log('wrong, guess = 1');
+      this.setState({ guess: 2, selected, lock: true }, () =>
+        setTimeout(() => {
+          trialData.push({
+            date: new Date(),
+            presented: currentTrial.images.map(image => image.key),
+            correct,
+            selected
+          });
+          this.setState({
+            guess: 0,
+            trialData,
+            selected: [],
+            lock: false,
+            trialNumber: trialNumber + 1
+          });
+        }, 4000)
+      );
+    }
+
+    console.log(
+      `guess: ${guess}, selected: ${selected}`,
+      'trialData:',
+      trialData
+    );
+  };
+
+  render() {
+    const { trial, trialNumber, vocoded, guess, errorMsg } = this.state;
+    if (errorMsg !== '') return this.saveButton();
+    if (trialNumber >= 8) return this.saveTrial();
+    const currentTrial = trial[trialNumber];
+    console.log('something changed', currentTrial);
+    return (
+      <div>
+        <div className={styles.backButton} data-tid="backButton">
+          <Link to={routes.HOME}>
+            <i className="fa fa-arrow-left fa-3x" />
+          </Link>
+        </div>
+        <div className="video">
+          <Player
+            height={400}
+            width={400}
+            fluid={false}
+            autoPlay
+            volume={0.5}
+            key={currentTrial.video}
+          >
+            {guess === 0 && <source src={currentTrial.video} />}
+            {guess === 1 && <source src={videos['Try Again'][vocoded]} />}
+            {guess === 2 && <source src={videos['Here It Is'][vocoded]} />}
+          </Player>
+        </div>
+        {currentTrial.images.map(({ image, key }, i) => (
+          <Image
+            src={image}
+            rounded
+            key={key}
+            onClick={() => this.selectImage(key, currentTrial, `image-${i}`)}
+            className={styles[`image-${i}`]}
+          />
+        ))}
+      </div>
+    );
+  }
+}
+
+export default withRouter(Trial);
