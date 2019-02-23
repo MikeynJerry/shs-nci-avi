@@ -108,6 +108,11 @@ class Trial extends Component {
       <div>
         <span>{this.state.errorMsg}</span>
         <Fab
+          style={{
+            left: 'calc(50vw - 90px)',
+            top: 'calc(50vh - 24px)',
+            position: 'absolute'
+          }}
           variant="extended"
           aria-label="Save"
           color="primary"
@@ -119,9 +124,11 @@ class Trial extends Component {
     </div>
   );
 
-  getIncorrectImages = (key, imageSet) => {
-    const images = Object.keys(imageSet).filter(imageKey => imageKey !== key);
-    return this.shuffle(images)
+  getIncorrectImages = (correctKey, imageSet) => {
+    const otherImages = Object.keys(imageSet).filter(
+      imageKey => imageKey !== correctKey
+    );
+    return this.shuffle(otherImages)
       .slice(0, 3)
       .map(key => ({
         key,
@@ -137,8 +144,17 @@ class Trial extends Component {
     return a;
   };
 
+  // imgClass should be used to find selected image and attach green/red outline
   selectImage = (key, currentTrial, imgClass) => {
-    const { guess, trialData, selected, trialNumber, lock } = this.state;
+    const {
+      guess,
+      trialData,
+      selected,
+      trialNumber,
+      lock,
+      vocoded,
+      trial
+    } = this.state;
     const { correct } = currentTrial;
 
     if (lock) return;
@@ -165,29 +181,51 @@ class Trial extends Component {
     if (guess === 0 && key !== correct) {
       // TODD: highlight incorrect image, remove it
       console.log('wrong, guess = 0');
-      this.setState({ guess: 1, selected });
+      const tempTrial = [...trial];
+      tempTrial[trialNumber] = {
+        ...tempTrial[trialNumber],
+        video: videos['Try Again'][vocoded][`TryAgain_${vocoded}`]
+      };
+
+      this.setState({
+        guess: 1,
+        selected,
+        trial: tempTrial
+      });
     }
 
     // inc guess, show here it is vid, highlight right answer
     if (guess === 1 && key !== correct) {
       // TODO: highlight correct image
       console.log('wrong, guess = 1');
-      this.setState({ guess: 2, selected, lock: true }, () =>
-        setTimeout(() => {
-          trialData.push({
-            date: new Date(),
-            presented: currentTrial.images.map(image => image.key),
-            correct,
-            selected
-          });
-          this.setState({
-            guess: 0,
-            trialData,
-            selected: [],
-            lock: false,
-            trialNumber: trialNumber + 1
-          });
-        }, 4000)
+      const tempTrial = [...trial];
+      tempTrial[trialNumber] = {
+        ...tempTrial[trialNumber],
+        video: videos['Here It Is'][vocoded][`HereItIs_${vocoded}`]
+      };
+      this.setState(
+        {
+          guess: 2,
+          selected,
+          lock: true,
+          trial: tempTrial
+        },
+        () =>
+          setTimeout(() => {
+            trialData.push({
+              date: new Date(),
+              presented: currentTrial.images.map(image => image.key),
+              correct,
+              selected
+            });
+            this.setState({
+              guess: 0,
+              trialData,
+              selected: [],
+              lock: false,
+              trialNumber: trialNumber + 1
+            });
+          }, 4000)
       );
     }
 
@@ -199,7 +237,7 @@ class Trial extends Component {
   };
 
   render() {
-    const { trial, trialNumber, vocoded, guess, errorMsg } = this.state;
+    const { trial, trialNumber, errorMsg } = this.state;
     if (errorMsg !== '') return this.saveButton();
     if (trialNumber >= 8) return this.saveTrial();
     const currentTrial = trial[trialNumber];
@@ -220,9 +258,7 @@ class Trial extends Component {
             volume={0.5}
             key={currentTrial.video}
           >
-            {guess === 0 && <source src={currentTrial.video} />}
-            {guess === 1 && <source src={videos['Try Again'][vocoded]} />}
-            {guess === 2 && <source src={videos['Here It Is'][vocoded]} />}
+            <source src={currentTrial.video} />
           </Player>
         </div>
         {currentTrial.images.map(({ image, key }, i) => (
