@@ -11,8 +11,8 @@ import { keys } from '../keys';
 
 const { dialog } = require('electron').remote;
 
-const videoWidth = 200;
-const videoHeight = 200;
+const videoWidth = 500;
+const videoHeight = 500;
 
 class Trial extends Component {
   constructor(props) {
@@ -40,7 +40,9 @@ class Trial extends Component {
       selected: [],
       trialData: [],
       lock: false,
-      errorMsg: ''
+      errorMsg: '',
+      showRedBorder: '',
+      showGreenBorder: ''
     };
   }
 
@@ -52,7 +54,9 @@ class Trial extends Component {
     trialKeys.forEach(key => {
       const correctImage = { key, image: imageSet[key] };
       const incorrectImages = this.getIncorrectImages(key, imageSet);
-      const trialImages = this.shuffle([correctImage, ...incorrectImages]);
+      const trialImages = this.shuffle([correctImage, ...incorrectImages]).map(
+        (image, i) => ({ ...image, i })
+      );
       const videoSet = videos[object][vocoded];
       const video = videoSet[`${key}_${vocoded}`];
 
@@ -190,11 +194,26 @@ class Trial extends Component {
         video: videos['Try Again'][vocoded][`TryAgain_${vocoded}`]
       };
 
-      this.setState({
-        guess: 1,
-        selected,
-        trial: tempTrial
-      });
+      this.setState(
+        {
+          guess: 1,
+          selected,
+          trial: tempTrial,
+          showRedBorder: imgClass,
+          lock: true
+        },
+        () =>
+          setTimeout(() => {
+            const tempImages = tempTrial[trialNumber].images.filter(
+              image => image.key !== key
+            );
+            tempTrial[trialNumber] = {
+              ...tempTrial[trialNumber],
+              images: tempImages
+            };
+            this.setState({ showRedBorder: '', trial: tempTrial, lock: false });
+          }, 3000)
+      );
     }
 
     // inc guess, show here it is vid, highlight right answer
@@ -206,12 +225,18 @@ class Trial extends Component {
         ...tempTrial[trialNumber],
         video: videos['Here It Is'][vocoded][`HereItIs_${vocoded}`]
       };
+
+      const { i: correctKey } = tempTrial[trialNumber].images.find(
+        ({ key: imgKey }) => imgKey === correct
+      );
+
       this.setState(
         {
           guess: 2,
           selected,
           lock: true,
-          trial: tempTrial
+          trial: tempTrial,
+          showGreenBorder: `image-${correctKey}`
         },
         () =>
           setTimeout(() => {
@@ -226,7 +251,8 @@ class Trial extends Component {
               trialData,
               selected: [],
               lock: false,
-              trialNumber: trialNumber + 1
+              trialNumber: trialNumber + 1,
+              showGreenBorder: ''
             });
           }, 4000)
       );
@@ -240,7 +266,13 @@ class Trial extends Component {
   };
 
   render() {
-    const { trial, trialNumber, errorMsg } = this.state;
+    const {
+      trial,
+      trialNumber,
+      errorMsg,
+      showRedBorder,
+      showGreenBorder
+    } = this.state;
     if (errorMsg !== '') return this.saveButton();
     if (trialNumber >= 8) return this.saveTrial();
     const currentTrial = trial[trialNumber];
@@ -271,15 +303,24 @@ class Trial extends Component {
             <source src={currentTrial.video} />
           </Player>
         </div>
-        {currentTrial.images.map(({ image, key }, i) => (
-          <Image
-            src={image}
-            rounded
-            key={key}
-            onClick={() => this.selectImage(key, currentTrial, `image-${i}`)}
-            className={styles[`image-${i}`]}
-          />
-        ))}
+        {currentTrial.images.map(({ image, key, i }) => {
+          let style = {};
+          const thisImage = `image-${i}`;
+          if (showRedBorder === thisImage) style = { border: '10px solid red' };
+          if (showGreenBorder === thisImage)
+            style = { border: '10px solid green' };
+
+          return (
+            <Image
+              src={image}
+              rounded
+              key={key}
+              onClick={() => this.selectImage(key, currentTrial, `image-${i}`)}
+              className={styles[`image-${i}`]}
+              style={style}
+            />
+          );
+        })}
       </div>
     );
   }
