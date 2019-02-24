@@ -36,36 +36,44 @@
   background-color: rgba(0, 0, 0, 0.5);
 }
 
+.image-base {
+  transition: all 0.2s ease-in-out;
+}
+
+.image-base:hover {
+  transform: scale(1.2);
+}
+
 .image-0 {
   position: absolute;
-  width: 33.3vh;
-  height: 33.3vh;
-  left: 8vw;
-  top: 8vh;
+  width: 25vh;
+  height: 25vh;
+  left: calc(50vw - 25vh - 50px);
+  bottom: calc(50px + 25vh + 50px);
 }
 
 .image-1 {
   position: absolute;
-  width: 33.3vh;
-  height: 33.3vh;
-  right: 8vw;
-  top: 8vh;
+  width: 25vh;
+  height: 25vh;
+  right: calc(50vw - 25vh - 50px);
+  bottom: calc(50px + 25vh + 50px);
 }
 
 .image-2 {
   position: absolute;
-  width: 33.3vh;
-  height: 33.3vh;
-  left: 8vw;
-  bottom: 8vh;
+  width: 25vh;
+  height: 25vh;
+  left: calc(50vw - 25vh - 50px);
+  bottom: 50px;
 }
 
 .image-3 {
   position: absolute;
-  width: 33.3vh;
-  height: 33.3vh;
-  right: 8vw;
-  bottom: 8vh;
+  width: 25vh;
+  height: 25vh;
+  right: calc(50vw - 25vh - 50px);
+  bottom: 50px;
 }
 
 .video {
@@ -78,4 +86,29 @@
   position: absolute;
   right: calc(100vw - 200px);
   top: calc(100vh - 200px);
+}
+
+.red-border {
+  border: 10px solid red;
+}
+
+.green-border {
+  border: 10px solid green;
+  color: green;
+}
+
+.correct-border {
+  border: 10px solid green;
+  color: green;
+  animation: borderBlink ease-in-out 1s infinite;
+}
+
+@keyframes borderBlink {
+  from,
+  to {
+    border-color: green;
+  }
+  50% {
+    border-color: transparent;
+  }
 }

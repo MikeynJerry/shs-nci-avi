@@ -3,20 +3,17 @@ import { withRouter, Link } from 'react-router-dom';
 import { Player } from 'video-react';
 import Image from 'react-bootstrap/Image';
 import Fab from '@material-ui/core/Fab';
-import { isContainer } from 'postcss-selector-parser';
-import { relative } from 'path';
-import { isAbsolute } from 'upath';
-import ControlBar from 'video-react/lib/components/control-bar/ControlBar';
 import routes from '../constants/routes';
 import styles from './Trial.css';
 import { videos } from '../videos';
 import { images } from '../images';
 import { keys } from '../keys';
+import imageOverlay from '../assets/images/audioStill.jpeg';
 
 const { dialog } = require('electron').remote;
 
 const videoWidth = 500;
-const videoHeight = 500;
+const videoHeight = 350;
 
 class Trial extends Component {
   constructor(props) {
@@ -46,7 +43,8 @@ class Trial extends Component {
       lock: false,
       errorMsg: '',
       showRedBorder: '',
-      showGreenBorder: ''
+      showGreenBorder: '',
+      showCorrectBorder: ''
     };
   }
 
@@ -85,7 +83,11 @@ class Trial extends Component {
           header: [
             { id: 'pid', title: 'Participant ID' },
             { id: 'date', title: 'Date and Time' },
-            { id: 'presented', title: 'Objects Presented' },
+            {
+              id: 'presented',
+              title:
+                'Objects Presented (Top Left, Top Right, Bottom Left, Bottom Right)'
+            },
             { id: 'correct', title: 'Target Object' },
             { id: 'selected', title: 'Objects Selected' }
           ]
@@ -117,7 +119,7 @@ class Trial extends Component {
         </Link>
       </div>
       <div>
-        <span>{this.state.errorMsg}</span>
+        <span style={{color: 'white'}}>{this.state.errorMsg}</span>
         <Fab
           style={{
             left: 'calc(50vw - 90px)',
@@ -180,12 +182,23 @@ class Trial extends Component {
         correct,
         selected
       });
-      this.setState({
-        guess: 0,
-        trialNumber: trialNumber + 1,
-        trialData,
-        selected: []
-      });
+      this.setState(
+        {
+          guess: 0,
+          trialData,
+          selected: [],
+          showCorrectBorder: imgClass
+        },
+        () =>
+          setTimeout(
+            () =>
+              this.setState({
+                trialNumber: trialNumber + 1,
+                showCorrectBorder: ''
+              }),
+            3000
+          )
+      );
     }
 
     // inc guess, show try again vid, highlight incorrect image / remove it
@@ -275,7 +288,9 @@ class Trial extends Component {
       trialNumber,
       errorMsg,
       showRedBorder,
-      showGreenBorder
+      showGreenBorder,
+      showCorrectBorder,
+      video
     } = this.state;
     if (errorMsg !== '') return this.saveButton();
     if (trialNumber >= 8) return this.saveTrial();
@@ -299,7 +314,7 @@ class Trial extends Component {
             style={{
               position: 'absolute',
               left: `calc(50vw - ${videoWidth / 2}px)`,
-              top: `calc(50vh - ${videoHeight / 2}px)`
+              top: `0px`
             }}
           >
             <Player
@@ -313,40 +328,42 @@ class Trial extends Component {
               <source src={currentTrial.video} />
             </Player>
           </div>
-          {this.state.video === 'audio' && (
+          {video === 'audio' && (
             <div
               className="overlaidimage"
               style={{
                 position: 'absolute',
                 left: `calc(50vw - ${videoWidth / 2}px)`,
-                top: `calc(50vh - ${videoHeight / 2}px)`
+                top: `0px`
               }}
             >
               <Image
                 style={{
-                  height: 475,
-                  width: 500
+                  height: videoHeight - 25,
+                  width: videoWidth
                 }}
-                src={require('../assets/images/audioStill.jpeg')}
+                src={imageOverlay}
               />
             </div>
           )}
         </div>
         {currentTrial.images.map(({ image, key, i }) => {
-          let style = {};
           const thisImage = `image-${i}`;
-          if (showRedBorder === thisImage) style = { border: '10px solid red' };
+          let classNames = `${styles[thisImage]} ${styles[`image-base`]}`;
+          if (showRedBorder === thisImage)
+            classNames += ` ${styles['red-border']}`;
           if (showGreenBorder === thisImage)
-            style = { border: '10px solid green' };
+            classNames += ` ${styles['green-border']}`;
+          if (showCorrectBorder === thisImage)
+            classNames += ` ${styles['correct-border']}`;
 
           return (
             <Image
               src={image}
               rounded
               key={key}
-              onClick={() => this.selectImage(key, currentTrial, `image-${i}`)}
-              className={styles[`image-${i}`]}
-              style={style}
+              onClick={() => this.selectImage(key, currentTrial, thisImage)}
+              className={classNames}
             />
           );
         })}
