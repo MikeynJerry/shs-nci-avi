@@ -73,3 +73,9 @@
   right: calc(100vw - 200px);
   top: calc(100vh - 200px);
 }
+
+.overlaidimage {
+  position: absolute;
+  right: calc(100vw - 200px);
+  top: calc(100vh - 200px);
+}

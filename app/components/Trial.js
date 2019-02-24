@@ -8,6 +8,10 @@ import styles from './Trial.css';
 import { videos } from '../videos';
 import { images } from '../images';
 import { keys } from '../keys';
+import { isContainer } from 'postcss-selector-parser';
+import { relative } from 'path';
+import { isAbsolute } from 'upath';
+import ControlBar from 'video-react/lib/components/control-bar/ControlBar';
 
 const { dialog } = require('electron').remote;
 
@@ -285,23 +289,47 @@ class Trial extends Component {
           </Link>
         </div>
         <div
-          className="video"
+          className="container"
           style={{
-            position: 'absolute',
-            left: `calc(50vw - ${videoWidth / 2}px)`,
-            top: `calc(50vh - ${videoHeight / 2}px)`
+            position:'relative'
           }}
         >
-          <Player
-            height={videoHeight}
-            width={videoWidth}
-            fluid={false}
-            autoPlay
-            volume={0.5}
-            key={currentTrial.video}
+          <div
+            className="video"
+            style={{
+              position:'absolute',
+              left:`calc(50vw - ${videoWidth / 2}px)`,
+              top:`calc(50vh - ${videoHeight / 2}px)`
+            }}
           >
-            <source src={currentTrial.video} />
-          </Player>
+            <Player
+              height={videoHeight}
+              width={videoWidth}
+              fluid={false}
+              autoPlay
+              volume={0.5}
+              key={currentTrial.video}
+            >
+              <ControlBar autoHide={false} />
+              <source src={currentTrial.video} />
+            </Player>
+          </div>
+          {this.state.video === 'audio' && <div 
+            className="overlaidimage"
+            style={{
+              position:'absolute',
+              left:`calc(50vw - ${videoWidth / 2}px)`,
+              top:`calc(50vh - ${videoHeight / 2}px)`
+            }} 
+          >
+             <Image
+              style={{
+                height: 475,
+                width: 500
+              }}
+              src={require("../assets/images/audioStill.jpeg")}
+            />  
+          </div>}
         </div>
         {currentTrial.images.map(({ image, key, i }) => {
           let style = {};
