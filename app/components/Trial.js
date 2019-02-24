@@ -11,6 +11,9 @@ import { keys } from '../keys';
 
 const { dialog } = require('electron').remote;
 
+const videoWidth = 200;
+const videoHeight = 200;
+
 class Trial extends Component {
   constructor(props) {
     super(props);
@@ -249,10 +252,17 @@ class Trial extends Component {
             <i className="fa fa-arrow-left fa-3x" />
           </Link>
         </div>
-        <div className="video">
+        <div
+          className="video"
+          style={{
+            position: 'absolute',
+            left: `calc(50vw - ${videoWidth / 2}px)`,
+            top: `calc(50vh - ${videoHeight / 2}px)`
+          }}
+        >
           <Player
-            height={400}
-            width={400}
+            height={videoHeight}
+            width={videoWidth}
             fluid={false}
             autoPlay
             volume={0.5}
