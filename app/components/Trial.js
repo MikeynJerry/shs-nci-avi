@@ -3,15 +3,15 @@ import { withRouter, Link } from 'react-router-dom';
 import { Player } from 'video-react';
 import Image from 'react-bootstrap/Image';
 import Fab from '@material-ui/core/Fab';
+import { isContainer } from 'postcss-selector-parser';
+import { relative } from 'path';
+import { isAbsolute } from 'upath';
+import ControlBar from 'video-react/lib/components/control-bar/ControlBar';
 import routes from '../constants/routes';
 import styles from './Trial.css';
 import { videos } from '../videos';
 import { images } from '../images';
 import { keys } from '../keys';
-import { isContainer } from 'postcss-selector-parser';
-import { relative } from 'path';
-import { isAbsolute } from 'upath';
-import ControlBar from 'video-react/lib/components/control-bar/ControlBar';
 
 const { dialog } = require('electron').remote;
 
@@ -291,15 +291,15 @@ class Trial extends Component {
         <div
           className="container"
           style={{
-            position:'relative'
+            position: 'relative'
           }}
         >
           <div
             className="video"
             style={{
-              position:'absolute',
-              left:`calc(50vw - ${videoWidth / 2}px)`,
-              top:`calc(50vh - ${videoHeight / 2}px)`
+              position: 'absolute',
+              left: `calc(50vw - ${videoWidth / 2}px)`,
+              top: `calc(50vh - ${videoHeight / 2}px)`
             }}
           >
             <Player
@@ -310,26 +310,27 @@ class Trial extends Component {
               volume={0.5}
               key={currentTrial.video}
             >
-              <ControlBar autoHide={false} />
               <source src={currentTrial.video} />
             </Player>
           </div>
-          {this.state.video === 'audio' && <div 
-            className="overlaidimage"
-            style={{
-              position:'absolute',
-              left:`calc(50vw - ${videoWidth / 2}px)`,
-              top:`calc(50vh - ${videoHeight / 2}px)`
-            }} 
-          >
-             <Image
+          {this.state.video === 'audio' && (
+            <div
+              className="overlaidimage"
               style={{
-                height: 475,
-                width: 500
+                position: 'absolute',
+                left: `calc(50vw - ${videoWidth / 2}px)`,
+                top: `calc(50vh - ${videoHeight / 2}px)`
               }}
-              src={require("../assets/images/audioStill.jpeg")}
-            />  
-          </div>}
+            >
+              <Image
+                style={{
+                  height: 475,
+                  width: 500
+                }}
+                src={require('../assets/images/audioStill.jpeg')}
+              />
+            </div>
+          )}
         </div>
         {currentTrial.images.map(({ image, key, i }) => {
           let style = {};
