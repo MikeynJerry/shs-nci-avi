@@ -1,14 +1,6 @@
 .backButton {
   position: absolute;
-}
-
-.counter {
-  position: absolute;
-  top: 30%;
-  left: 45%;
-  font-size: 10rem;
-  font-weight: bold;
-  letter-spacing: -0.025em;
+  z-index: 100000000;
 }
 
 .btnGroup {
@@ -37,7 +29,7 @@
 }
 
 .image-base {
-  transition: all 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out;
 }
 
 .image-base:hover {
@@ -46,33 +38,33 @@
 
 .image-0 {
   position: absolute;
-  width: 25vh;
-  height: 25vh;
-  left: calc(50vw - 25vh - 50px);
-  bottom: calc(50px + 25vh + 50px);
+  width: 22vh;
+  height: 22vh;
+  left: calc(50vw - 22vh - 50px);
+  bottom: calc(50px + 22vh + 50px);
 }
 
 .image-1 {
   position: absolute;
-  width: 25vh;
-  height: 25vh;
-  right: calc(50vw - 25vh - 50px);
-  bottom: calc(50px + 25vh + 50px);
+  width: 22vh;
+  height: 22vh;
+  right: calc(50vw - 22vh - 50px);
+  bottom: calc(50px + 22vh + 50px);
 }
 
 .image-2 {
   position: absolute;
-  width: 25vh;
-  height: 25vh;
-  left: calc(50vw - 25vh - 50px);
+  width: 22vh;
+  height: 22vh;
+  left: calc(50vw - 22vh - 50px);
   bottom: 50px;
 }
 
 .image-3 {
   position: absolute;
-  width: 25vh;
-  height: 25vh;
-  right: calc(50vw - 25vh - 50px);
+  width: 22vh;
+  height: 22vh;
+  right: calc(50vw - 22vh - 50px);
   bottom: 50px;
 }
 
@@ -86,6 +78,20 @@
   position: absolute;
   right: calc(100vw - 200px);
   top: calc(100vh - 200px);
+  pointer-events: none;
+}
+
+.black-screen {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  background: black;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
 }
 
 .red-border {

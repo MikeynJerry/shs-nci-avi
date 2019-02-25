@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { withRouter, Link } from 'react-router-dom';
-import { Player } from 'video-react';
+import { Player, ControlBar } from 'video-react';
 import Image from 'react-bootstrap/Image';
 import Fab from '@material-ui/core/Fab';
 import routes from '../constants/routes';
@@ -12,8 +12,8 @@ import imageOverlay from '../assets/images/audioStill.jpeg';
 
 const { dialog } = require('electron').remote;
 
-const videoWidth = 500;
-const videoHeight = 350;
+const videoWidth = 600;
+const videoHeight = 450;
 
 class Trial extends Component {
   constructor(props) {
@@ -44,7 +44,8 @@ class Trial extends Component {
       errorMsg: '',
       showRedBorder: '',
       showGreenBorder: '',
-      showCorrectBorder: ''
+      showCorrectBorder: '',
+      blackScreen: false
     };
   }
 
@@ -65,6 +66,7 @@ class Trial extends Component {
       trial.push({
         correct: key,
         images: trialImages,
+        permImages: trialImages,
         video
       });
     });
@@ -119,7 +121,7 @@ class Trial extends Component {
         </Link>
       </div>
       <div>
-        <span style={{color: 'white'}}>{this.state.errorMsg}</span>
+        <span style={{ color: 'white' }}>{this.state.errorMsg}</span>
         <Fab
           style={{
             left: 'calc(50vw - 90px)',
@@ -178,7 +180,7 @@ class Trial extends Component {
     if (key === correct) {
       trialData.push({
         date: new Date(),
-        presented: currentTrial.images.map(image => image.key),
+        presented: currentTrial.permImages.map(image => image.key),
         correct,
         selected
       });
@@ -192,10 +194,15 @@ class Trial extends Component {
         () =>
           setTimeout(
             () =>
-              this.setState({
-                trialNumber: trialNumber + 1,
-                showCorrectBorder: ''
-              }),
+              this.setState({ blackScreen: true }, () =>
+                setTimeout(() => {
+                  this.setState({
+                    trialNumber: trialNumber + 1,
+                    showCorrectBorder: '',
+                    blackScreen: false
+                  });
+                }, 1500)
+              ),
             3000
           )
       );
@@ -228,7 +235,12 @@ class Trial extends Component {
               ...tempTrial[trialNumber],
               images: tempImages
             };
-            this.setState({ showRedBorder: '', trial: tempTrial, lock: false });
+
+            this.setState({
+              showRedBorder: '',
+              trial: tempTrial,
+              lock: false
+            });
           }, 3000)
       );
     }
@@ -249,29 +261,44 @@ class Trial extends Component {
 
       this.setState(
         {
-          guess: 2,
           selected,
           lock: true,
-          trial: tempTrial,
           showGreenBorder: `image-${correctKey}`
         },
         () =>
-          setTimeout(() => {
-            trialData.push({
-              date: new Date(),
-              presented: currentTrial.images.map(image => image.key),
-              correct,
-              selected
-            });
-            this.setState({
-              guess: 0,
-              trialData,
-              selected: [],
-              lock: false,
-              trialNumber: trialNumber + 1,
-              showGreenBorder: ''
-            });
-          }, 4000)
+          setTimeout(
+            () =>
+              this.setState(
+                { guess: 2, trial: tempTrial },
+                () =>
+                  setTimeout(() => {
+                    this.setState(
+                      { blackScreen: true },
+                      () =>
+                        setTimeout(() => {
+                          trialData.push({
+                            date: new Date(),
+                            presented: currentTrial.permImages.map(
+                              image => image.key
+                            ),
+                            correct,
+                            selected
+                          });
+                          this.setState({
+                            guess: 0,
+                            trialData,
+                            selected: [],
+                            lock: false,
+                            trialNumber: trialNumber + 1,
+                            showGreenBorder: '',
+                            blackScreen: false
+                          });
+                        }, 1500) // black screen
+                    );
+                  }, 5000) // here it is video
+              ),
+            2000 // delay after selecting image to when 'here it is' starts
+          )
       );
     }
 
@@ -290,6 +317,7 @@ class Trial extends Component {
       showRedBorder,
       showGreenBorder,
       showCorrectBorder,
+      blackScreen,
       video
     } = this.state;
     if (errorMsg !== '') return this.saveButton();
@@ -303,6 +331,7 @@ class Trial extends Component {
             <i className="fa fa-arrow-left fa-3x" />
           </Link>
         </div>
+        {blackScreen && <div className={styles['black-screen']} />}
         <div
           className="container"
           style={{
@@ -314,7 +343,8 @@ class Trial extends Component {
             style={{
               position: 'absolute',
               left: `calc(50vw - ${videoWidth / 2}px)`,
-              top: `0px`
+              top: `0px`,
+              pointerEvents: 'none'
             }}
           >
             <Player
@@ -326,6 +356,7 @@ class Trial extends Component {
               key={currentTrial.video}
             >
               <source src={currentTrial.video} />
+              <ControlBar disableCompletely />
             </Player>
           </div>
           {video === 'audio' && (
