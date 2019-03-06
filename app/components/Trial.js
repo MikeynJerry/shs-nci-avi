@@ -11,6 +11,7 @@ import { keys } from '../keys';
 import imageOverlay from '../assets/images/audioStill.jpeg';
 
 const { dialog } = require('electron').remote;
+const { remote } = require('electron');
 
 const videoWidth = 500;
 const videoHeight = 400;
@@ -32,6 +33,7 @@ class Trial extends Component {
 
     this.state = {
       pid,
+      object,
       video,
       vocoded,
       transcription,
@@ -82,6 +84,7 @@ class Trial extends Component {
   };
 
   saveTrial = referrer => {
+    const { object, video, vocoded, transcription } = this.state;
     // console.log(referrer);
     dialog.showSaveDialog(
       { filters: [{ name: 'CSV', extensions: ['csv'] }] },
@@ -91,6 +94,10 @@ class Trial extends Component {
           path: filename,
           header: [
             { id: 'pid', title: 'Participant ID' },
+            {
+              id: 'settings',
+              title: 'Settings (object,video,vocoded,transcription)'
+            },
             {
               id: 'presented',
               title:
@@ -102,12 +109,15 @@ class Trial extends Component {
             { id: 'first', title: 'First Selection' },
             { id: 'again', title: 'Try Again Start' },
             { id: 'second', title: 'Second Selection' },
-            { id: 'here', title: 'Here It Is Start' }
+            { id: 'here', title: 'Here It Is Start' },
+            { id: 'positions', title: 'Object positions (TL,TR,BL,BR)' },
+            { id: 'pic', title: 'Picture Size [x,y]' }
           ]
         });
         const { trialData, pid } = this.state;
         const records = trialData.map(trial => ({
           pid,
+          settings: `${object},${video},${vocoded},${transcription}`,
           ...trial
         }));
 
@@ -188,13 +198,28 @@ class Trial extends Component {
 
     selected.push(key);
 
-    // move to next trial and gather stats
+    const [w, h] = remote.getCurrentWindow().getSize();
+    const positions = `[(${0.5 * w - 0.22 * h - 50 + 0.11 * h},${50 +
+      0.22 * h +
+      20 +
+      0.11 * h}),
+    (${w - (0.5 * w - 0.22 * h - 50 + 0.11 * h)},${50 +
+      0.22 * h +
+      20 +
+      0.11 * h}),
+    (${0.5 * w - 0.22 * h - 50 + 0.11 * h},${20 + 0.11 * h}),
+    (${w - (0.5 * w - 0.22 * h - 50 + 0.11 * h)},${20 + 0.11 * h})]`;
+    const pic = `[${0.22 * h},${0.22 * h}]`;
+
+    // move to next and gather stats
     if (key === correct) {
       trialData.push({
         ...timeData,
         presented: currentTrial.permImages.map(image => image.key),
         correct,
-        selected
+        selected,
+        positions,
+        pic
       });
       this.setState(
         {
@@ -311,7 +336,9 @@ class Trial extends Component {
                               image => image.key
                             ),
                             correct,
-                            selected
+                            selected,
+                            positions,
+                            pic
                           });
                           this.setState({
                             guess: 0,
