@@ -12,8 +12,8 @@ import imageOverlay from '../assets/images/audioStill.jpeg';
 
 const { dialog } = require('electron').remote;
 
-const videoWidth = 600;
-const videoHeight = 450;
+const videoWidth = 500;
+const videoHeight = 400;
 
 class Trial extends Component {
   constructor(props) {
@@ -24,20 +24,27 @@ class Trial extends Component {
           pid,
           object: { value: object },
           video: { value: video },
-          vocoded: { value: vocoded }
+          vocoded: { value: vocoded },
+          transcription: { value: transcription }
         }
       }
     } = this.props;
 
     this.state = {
       pid,
-      object,
       video,
       vocoded,
+      transcription,
       trialNumber: 0,
       trial: this.generateTrial(object, vocoded),
       guess: 0,
-      tempTrialData: {},
+      timeData: {
+        first: null,
+        second: null,
+        start: new Date(),
+        again: null,
+        here: null
+      },
       selected: [],
       trialData: [],
       lock: false,
@@ -75,7 +82,7 @@ class Trial extends Component {
   };
 
   saveTrial = referrer => {
-    console.log(referrer);
+    // console.log(referrer);
     dialog.showSaveDialog(
       { filters: [{ name: 'CSV', extensions: ['csv'] }] },
       filename => {
@@ -84,14 +91,18 @@ class Trial extends Component {
           path: filename,
           header: [
             { id: 'pid', title: 'Participant ID' },
-            { id: 'date', title: 'Date and Time' },
             {
               id: 'presented',
               title:
                 'Objects Presented (Top Left, Top Right, Bottom Left, Bottom Right)'
             },
             { id: 'correct', title: 'Target Object' },
-            { id: 'selected', title: 'Objects Selected' }
+            { id: 'selected', title: 'Objects Selected' },
+            { id: 'start', title: 'Video/Audio Start' },
+            { id: 'first', title: 'First Selection' },
+            { id: 'again', title: 'Try Again Start' },
+            { id: 'second', title: 'Second Selection' },
+            { id: 'here', title: 'Here It Is Start' }
           ]
         });
         const { trialData, pid } = this.state;
@@ -168,7 +179,8 @@ class Trial extends Component {
       trialNumber,
       lock,
       vocoded,
-      trial
+      trial,
+      timeData
     } = this.state;
     const { correct } = currentTrial;
 
@@ -179,7 +191,7 @@ class Trial extends Component {
     // move to next trial and gather stats
     if (key === correct) {
       trialData.push({
-        date: new Date(),
+        ...timeData,
         presented: currentTrial.permImages.map(image => image.key),
         correct,
         selected
@@ -192,37 +204,44 @@ class Trial extends Component {
           showCorrectBorder: imgClass
         },
         () =>
-          setTimeout(
-            () =>
-              this.setState({ blackScreen: true }, () =>
-                setTimeout(() => {
-                  this.setState({
-                    trialNumber: trialNumber + 1,
-                    showCorrectBorder: '',
-                    blackScreen: false
-                  });
-                }, 1500)
-              ),
-            3000
-          )
+          setTimeout(() => {
+            this.setState({ blackScreen: true }, () =>
+              setTimeout(() => {
+                this.setState({
+                  timeData: {
+                    first: null,
+                    second: null,
+                    start: new Date(),
+                    again: null,
+                    here: null
+                  },
+                  trialNumber: trialNumber + 1,
+                  showCorrectBorder: '',
+                  blackScreen: false
+                });
+              }, 1500)
+            );
+          }, 3000)
       );
     }
 
     // inc guess, show try again vid, highlight incorrect image / remove it
     if (guess === 0 && key !== correct) {
-      // TODD: highlight incorrect image, remove it
-      console.log('wrong, guess = 0');
+      // console.log('wrong, guess = 0');
       const tempTrial = [...trial];
       tempTrial[trialNumber] = {
         ...tempTrial[trialNumber],
         video: videos['Try Again'][vocoded][`TryAgain_${vocoded}`]
       };
+      timeData.first = new Date();
+      // console.log('time.first', timeData);
 
       this.setState(
         {
           guess: 1,
           selected,
           trial: tempTrial,
+          timeData,
           showRedBorder: imgClass,
           lock: true
         },
@@ -236,9 +255,13 @@ class Trial extends Component {
               images: tempImages
             };
 
+            timeData.again = new Date();
+            // console.log('time.again', timeData);
+
             this.setState({
               showRedBorder: '',
               trial: tempTrial,
+              timeData,
               lock: false
             });
           }, 3000)
@@ -248,12 +271,15 @@ class Trial extends Component {
     // inc guess, show here it is vid, highlight right answer
     if (guess === 1 && key !== correct) {
       // TODO: highlight correct image
-      console.log('wrong, guess = 1');
+      // console.log('wrong, guess = 1');
       const tempTrial = [...trial];
       tempTrial[trialNumber] = {
         ...tempTrial[trialNumber],
         video: videos['Here It Is'][vocoded][`HereItIs_${vocoded}`]
       };
+
+      timeData.second = new Date();
+      // console.log('time.second', timeData);
 
       const { i: correctKey } = tempTrial[trialNumber].images.find(
         ({ key: imgKey }) => imgKey === correct
@@ -263,13 +289,16 @@ class Trial extends Component {
         {
           selected,
           lock: true,
+          timeData,
           showGreenBorder: `image-${correctKey}`
         },
         () =>
           setTimeout(
-            () =>
+            () => {
+              timeData.here = new Date();
+              // console.log('time.here', timeData);
               this.setState(
-                { guess: 2, trial: tempTrial },
+                { guess: 2, trial: tempTrial, timeData },
                 () =>
                   setTimeout(() => {
                     this.setState(
@@ -277,7 +306,7 @@ class Trial extends Component {
                       () =>
                         setTimeout(() => {
                           trialData.push({
-                            date: new Date(),
+                            ...timeData,
                             presented: currentTrial.permImages.map(
                               image => image.key
                             ),
@@ -288,6 +317,13 @@ class Trial extends Component {
                             guess: 0,
                             trialData,
                             selected: [],
+                            timeData: {
+                              first: null,
+                              second: null,
+                              start: new Date(),
+                              again: null,
+                              here: null
+                            },
                             lock: false,
                             trialNumber: trialNumber + 1,
                             showGreenBorder: '',
@@ -296,17 +332,29 @@ class Trial extends Component {
                         }, 1500) // black screen
                     );
                   }, 5000) // here it is video
-              ),
+              );
+            },
             2000 // delay after selecting image to when 'here it is' starts
           )
       );
     }
 
-    console.log(
+    /* console.log(
       `guess: ${guess}, selected: ${selected}`,
       'trialData:',
       trialData
-    );
+    ); */
+  };
+
+  getTranscription = () => {
+    const { transcription, trial, trialNumber } = this.state;
+    if (transcription === 'off') return null;
+
+    const currentTrial = trial[trialNumber];
+    let text = `Where's the ${currentTrial.correct.toLowerCase()}?`;
+    if (currentTrial.video.includes('Try Again')) text = 'Try again!';
+    if (currentTrial.video.includes('Here It Is')) text = 'Here it is.';
+    return text;
   };
 
   render() {
@@ -318,12 +366,14 @@ class Trial extends Component {
       showGreenBorder,
       showCorrectBorder,
       blackScreen,
-      video
+      video,
+      transcription
     } = this.state;
     if (errorMsg !== '') return this.saveButton();
     if (trialNumber >= 8) return this.saveTrial();
     const currentTrial = trial[trialNumber];
-    console.log('something changed', currentTrial);
+    const subtitles = this.getTranscription();
+    // console.log('something changed', currentTrial);
     return (
       <div>
         <div className={styles.backButton} data-tid="backButton">
@@ -370,13 +420,22 @@ class Trial extends Component {
             >
               <Image
                 style={{
-                  height: videoHeight - 25,
+                  height: videoHeight - 50,
                   width: videoWidth
                 }}
                 src={imageOverlay}
               />
             </div>
           )}
+        </div>
+        <div
+          className={
+            transcription === 'on'
+              ? styles['transcription-on']
+              : styles['transcription-off']
+          }
+        >
+          {subtitles}
         </div>
         {currentTrial.images.map(({ image, key, i }) => {
           const thisImage = `image-${i}`;

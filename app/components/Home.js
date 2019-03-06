@@ -3,7 +3,6 @@ import { Link, withRouter } from 'react-router-dom';
 import Select from 'react-select';
 import Fab from '@material-ui/core/Fab';
 import { TextField } from '@material-ui/core';
-import routes from '../constants/routes';
 import styles from './Home.css';
 
 const objectOptions = [
@@ -22,6 +21,11 @@ const videoOptions = [
   { value: 'audio', label: 'Audio Only' }
 ];
 
+const transcriptionOptions = [
+  { value: 'on', label: 'On' },
+  { value: 'off', label: 'Off' }
+];
+
 const style = {
   selectText: {
     color: 'white'
@@ -38,14 +42,21 @@ class Home extends Component {
       object: null,
       vocoded: null,
       video: null,
+      transcription: null,
       formFilled: false
     };
   }
 
   stateChange = () => {
-    const { pid, object, vocoded, video } = this.state;
+    const { pid, object, vocoded, video, transcription } = this.state;
 
-    if (pid !== '' && object !== null && vocoded !== null && video !== null)
+    if (
+      pid !== '' &&
+      object !== null &&
+      vocoded !== null &&
+      video !== null &&
+      transcription !== null
+    )
       return this.setState({ formFilled: true });
 
     return this.setState({ formFilled: false });
@@ -55,7 +66,14 @@ class Home extends Component {
     this.setState({ [key]: value }, this.stateChange);
 
   render() {
-    const { pid, video, object, vocoded, formFilled } = this.state;
+    const {
+      pid,
+      video,
+      object,
+      vocoded,
+      transcription,
+      formFilled
+    } = this.state;
     return (
       <div className={styles.container} data-tid="container">
         <TextField
@@ -94,6 +112,15 @@ class Home extends Component {
           options={videoOptions}
           value={video}
           onChange={this.handleSelect('video')}
+        />
+        <br />
+        <span style={style.selectText}>Subtitles:</span>
+        <br />
+        <br />
+        <Select
+          options={transcriptionOptions}
+          value={transcription}
+          onChange={this.handleSelect('transcription')}
         />
         <br />
         <Fab

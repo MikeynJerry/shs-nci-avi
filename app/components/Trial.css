@@ -28,6 +28,15 @@
   background-color: rgba(0, 0, 0, 0.5);
 }
 
+.transcription-on {
+  color: white;
+  position: absolute;
+  top: 350px;
+  left: calc(50vw - 250px);
+  width: 500px;
+  text-align: center;
+}
+
 .image-base {
   transition: transform 0.2s ease-in-out;
 }
@@ -41,7 +50,7 @@
   width: 22vh;
   height: 22vh;
   left: calc(50vw - 22vh - 50px);
-  bottom: calc(50px + 22vh + 50px);
+  bottom: calc(50px + 22vh + 20px);
 }
 
 .image-1 {
@@ -49,7 +58,7 @@
   width: 22vh;
   height: 22vh;
   right: calc(50vw - 22vh - 50px);
-  bottom: calc(50px + 22vh + 50px);
+  bottom: calc(50px + 22vh + 20px);
 }
 
 .image-2 {
@@ -57,7 +66,7 @@
   width: 22vh;
   height: 22vh;
   left: calc(50vw - 22vh - 50px);
-  bottom: 50px;
+  bottom: 20px;
 }
 
 .image-3 {
@@ -65,20 +74,7 @@
   width: 22vh;
   height: 22vh;
   right: calc(50vw - 22vh - 50px);
-  bottom: 50px;
-}
-
-.video {
-  position: absolute;
-  right: calc(100vw - 200px);
-  top: calc(100vh - 200px);
-}
-
-.overlaidimage {
-  position: absolute;
-  right: calc(100vw - 200px);
-  top: calc(100vh - 200px);
-  pointer-events: none;
+  bottom: 20px;
 }
 
 .black-screen {
