@@ -13,8 +13,8 @@ import imageOverlay from '../assets/images/audioStill.jpeg';
 const { dialog } = require('electron').remote;
 const { remote } = require('electron');
 
-const videoWidth = 500;
-const videoHeight = 400;
+const videoWidth = 600;
+const videoHeight = 450;
 
 class Trial extends Component {
   constructor(props) {
