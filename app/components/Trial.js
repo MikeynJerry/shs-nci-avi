@@ -54,8 +54,16 @@ class Trial extends Component {
       showRedBorder: '',
       showGreenBorder: '',
       showCorrectBorder: '',
-      blackScreen: false
+      blackScreen: true
     };
+  }
+
+  componentDidMount() {
+    setTimeout(
+      () =>
+        this.setState({ blackScreen: false }, () => this.refs.player.play()),
+      1000
+    );
   }
 
   generateTrial = (object, vocoded) => {
@@ -230,21 +238,25 @@ class Trial extends Component {
         },
         () =>
           setTimeout(() => {
-            this.setState({ blackScreen: true }, () =>
-              setTimeout(() => {
-                this.setState({
-                  timeData: {
-                    first: null,
-                    second: null,
-                    start: new Date(),
-                    again: null,
-                    here: null
-                  },
-                  trialNumber: trialNumber + 1,
-                  showCorrectBorder: '',
-                  blackScreen: false
-                });
-              }, 1500)
+            this.setState(
+              { blackScreen: true, trialNumber: trialNumber + 1 },
+              () =>
+                setTimeout(() => {
+                  this.setState(
+                    {
+                      timeData: {
+                        first: null,
+                        second: null,
+                        start: new Date(),
+                        again: null,
+                        here: null
+                      },
+                      showCorrectBorder: '',
+                      blackScreen: false
+                    },
+                    () => this.refs.player.play()
+                  );
+                }, 1500)
             );
           }, 3000)
       );
@@ -270,7 +282,8 @@ class Trial extends Component {
           showRedBorder: imgClass,
           lock: true
         },
-        () =>
+        () => {
+          this.refs.player.play();
           setTimeout(() => {
             const tempImages = tempTrial[trialNumber].images.filter(
               image => image.key !== key
@@ -289,7 +302,8 @@ class Trial extends Component {
               timeData,
               lock: false
             });
-          }, 3000)
+          }, 3000);
+        }
       );
     }
 
@@ -322,25 +336,25 @@ class Trial extends Component {
             () => {
               timeData.here = new Date();
               // console.log('time.here', timeData);
-              this.setState(
-                { guess: 2, trial: tempTrial, timeData },
-                () =>
-                  setTimeout(() => {
-                    this.setState(
-                      { blackScreen: true },
-                      () =>
-                        setTimeout(() => {
-                          trialData.push({
-                            ...timeData,
-                            presented: currentTrial.permImages.map(
-                              image => image.key
-                            ),
-                            correct,
-                            selected,
-                            positions,
-                            pic
-                          });
-                          this.setState({
+              this.setState({ guess: 2, trial: tempTrial, timeData }, () => {
+                this.refs.player.play();
+                setTimeout(() => {
+                  this.setState(
+                    { blackScreen: true, trialNumber: trialNumber + 1 },
+                    () =>
+                      setTimeout(() => {
+                        trialData.push({
+                          ...timeData,
+                          presented: currentTrial.permImages.map(
+                            image => image.key
+                          ),
+                          correct,
+                          selected,
+                          positions,
+                          pic
+                        });
+                        this.setState(
+                          {
                             guess: 0,
                             trialData,
                             selected: [],
@@ -352,14 +366,16 @@ class Trial extends Component {
                               here: null
                             },
                             lock: false,
-                            trialNumber: trialNumber + 1,
+
                             showGreenBorder: '',
                             blackScreen: false
-                          });
-                        }, 1500) // black screen
-                    );
-                  }, 5000) // here it is video
-              );
+                          },
+                          () => this.refs.player.play()
+                        );
+                      }, 1500) // black screen
+                  );
+                }, 5000); // here it is video
+              });
             },
             2000 // delay after selecting image to when 'here it is' starts
           )
@@ -428,9 +444,9 @@ class Trial extends Component {
               height={videoHeight}
               width={videoWidth}
               fluid={false}
-              autoPlay
               volume={0.5}
               key={currentTrial.video}
+              ref="player"
             >
               <source src={currentTrial.video} />
               <ControlBar disableCompletely />
